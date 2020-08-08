@@ -1,6 +1,7 @@
 var path = require("path");
 var HtmlWebpackPlugin = require("html-webpack-plugin");
 
+//Gå igenom ändringar i denna
 module.exports = {
   entry: "./src/index.js",
   output: {
@@ -14,14 +15,9 @@ module.exports = {
       { test: /\.(png|svg|jpg|gif)$/, use: ["file-loader"] },
     ],
   },
-  mode: "development",
   plugins: [
     new HtmlWebpackPlugin({
       template: "./src/index.html",
-      title: "Awesome games",
     }),
   ],
-  devServer: {
-    contentBase: "./dist",
-  },
 };
