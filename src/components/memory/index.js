@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
 import StatusBar from "./StatusBar";
 import MemoryCard from "./MemoryCard";
@@ -26,7 +26,7 @@ function generateCards() {
 }
 
 //mappa cardsTOFLip till deras id
-function setCardIsFlipped(cards, keysToFlip) {
+function flipCards(cards, keysToFlip) {
   return cards.map((card) => {
     if (keysToFlip.includes(card.key)) {
       return {
@@ -40,6 +40,10 @@ function setCardIsFlipped(cards, keysToFlip) {
 
 function Memory() {
   const [game, setGame] = useState({ cards: generateCards() });
+  const [wrongPair, setWrongPair] = useState([]);
+
+  const timeOutIds = useRef([]);
+
   const [startTime, setStartTime] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
 
@@ -52,7 +56,33 @@ function Memory() {
     return () => clearInterval(intervalId);
   }, [startTime]);
 
+  useEffect(() => {
+    if (wrongPair.length === 0) return;
+    const timeOutId = setTimeout(() => {
+      setGame((oldGame) => {
+        const newCards = flipCards(
+          oldGame.cards,
+          wrongPair.map((card) => card.key)
+        );
+        return {
+          cards: newCards,
+          firstCard: oldGame.firstCard,
+        };
+      });
+    }, 1000);
+    timeOutIds.current = timeOutIds.current.concat(timeOutId);
+  }, [wrongPair]);
+
+  useEffect(() => {
+    return () => {
+      console.log("timeouts", timeOutIds);
+      timeOutIds.current.forEach((id) => clearTimeout(id));
+    };
+  }, []);
+
   function onRestart() {
+    timeOutIds.current.forEach((id) => clearTimeout(id));
+    timeOutIds.current = [];
     setGame({ cards: generateCards() });
     setStartTime(0);
     setElapsedTime(0);
@@ -64,7 +94,8 @@ function Memory() {
     }
     // If the card is already flipped there is nothing we need to do.
 
-    setGame(({ cards, firstCard, secondCard }) => {
+    setGame(({ cards, firstCard }) => {
+      const newCards = flipCards(cards, [card.key]);
       // The { cards, firstCard, secondCard } above is the decomposed game object.
       // These three variables represent the previous state, before a card was clicked.
       // We should return the new state, depending on the previous one and on the card that was clicked.
@@ -72,37 +103,18 @@ function Memory() {
       // 1. The clicked card is the first card (meaning that both firstCard and secondCard from the previous state are undefined)
       if (!firstCard) {
         return {
-          cards: setCardIsFlipped(cards, [card.key]), //behöver flippa kortet som är klickat på!
+          cards: newCards, //behöver flippa kortet som är klickat på!
           firstCard: card,
         };
-      }
-      // 2. The clicked card is the second card (meaning that firstCard is defined, but secondCard isn't)
-      if (!secondCard) {
+      } else {
+        if (firstCard.color !== card.color) {
+          setWrongPair([firstCard, card]);
+        }
         return {
-          cards: setCardIsFlipped(cards, [card.key]),
-          firstCard: firstCard,
-          secondCard: card,
+          cards: newCards,
         };
       }
-      // 3. The clicked card is the "third" card and the previous two clicked cards have the same color
-      if (firstCard.color === secondCard.color) {
-        return {
-          cards: setCardIsFlipped(cards, [card.key]),
-          firstCard: card,
-        };
-      }
-      // 4. The clicked card is the "third" card and the previous two clicked cards have different colors
-      // flippa tillbaka de två första
-      return {
-        cards: setCardIsFlipped(cards, [
-          card.key,
-          firstCard.key,
-          secondCard.key,
-        ]),
-        firstCard: card,
-      };
     });
-
     setStartTime((oldStartTime) =>
       oldStartTime === 0 ? Date.now() : oldStartTime
     );
