@@ -25,24 +25,69 @@ function generateCards() {
   return cards.sort(() => Math.random() - 0.5);
 }
 
+//mappa cardsTOFLip till deras id
+function setCardIsFlipped(cards, keysToFlip) {
+  return cards.map((card) => {
+    if (keysToFlip.includes(card.key)) {
+      return {
+        ...card,
+        isFlipped: !card.isFlipped,
+      };
+    }
+    return card;
+  });
+}
+
 function Memory() {
-  const [cards, setCards] = useState(generateCards());
+  const [game, setGame] = useState({ cards: generateCards() });
 
   function onRestart() {
-    setCards(generateCards());
+    setGame({ cards: generateCards() });
   }
 
   function onCardClick(card) {
-    setCards((cards) => {
-      return cards.map((oldCard) => {
-        if (oldCard.key === card.key) {
-          return {
-            ...oldCard,
-            isFlipped: true,
-          };
-        }
-        return oldCard;
-      });
+    if (card.isFlipped) {
+      return;
+    }
+    // If the card is already flipped there is nothing we need to do.
+
+    setGame(({ cards, firstCard, secondCard }) => {
+      // The { cards, firstCard, secondCard } above is the decomposed game object.
+      // These three variables represent the previous state, before a card was clicked.
+      // We should return the new state, depending on the previous one and on the card that was clicked.
+      // There are 4 different cases.
+      // 1. The clicked card is the first card (meaning that both firstCard and secondCard from the previous state are undefined)
+      if (!firstCard) {
+        return {
+          cards: setCardIsFlipped(cards, [card.key]), //behöver flippa kortet som är klickat på!
+          firstCard: card,
+        };
+      }
+      // 2. The clicked card is the second card (meaning that firstCard is defined, but secondCard isn't)
+      if (!secondCard) {
+        return {
+          cards: setCardIsFlipped(cards, [card.key]),
+          firstCard: firstCard,
+          secondCard: card,
+        };
+      }
+      // 3. The clicked card is the "third" card and the previous two clicked cards have the same color
+      if (firstCard.color === secondCard.color) {
+        return {
+          cards: setCardIsFlipped(cards, [card.key]),
+          firstCard: card,
+        };
+      }
+      // 4. The clicked card is the "third" card and the previous two clicked cards have different colors
+      // flippa tillbaka de två första
+      return {
+        cards: setCardIsFlipped(cards, [
+          card.key,
+          firstCard.key,
+          secondCard.key,
+        ]),
+        firstCard: card,
+      };
     });
   }
 
@@ -51,7 +96,7 @@ function Memory() {
       <div className="game-container">
         <StatusBar status="Time 0s" onRestart={onRestart}></StatusBar>
         <div className="memory-grid">
-          {cards.map((card) => (
+          {game.cards.map((card) => (
             <MemoryCard {...card} onClick={() => onCardClick(card)} />
           ))}
         </div>
