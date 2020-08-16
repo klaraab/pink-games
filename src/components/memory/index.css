@@ -1,9 +1,4 @@
 @media only screen and (orientation: landscape) {
-  .game-container {
-    width: 40vw;
-    margin: 1vw auto;
-  }
-
   .memory-grid {
     margin-top: 2vw;
     height: 40vw;
@@ -11,11 +6,6 @@
   }
 }
 @media only screen and (orientation: portrait) {
-  .game-container {
-    width: 96vw;
-    margin: 2vw auto;
-  }
-
   .memory-grid {
     margin-top: 2vw;
     height: 96vw;

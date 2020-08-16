@@ -3,6 +3,7 @@
 }
 .button {
   flex: 0;
+  margin-right: 0.5vw;
 }
 .status {
   flex: 1;

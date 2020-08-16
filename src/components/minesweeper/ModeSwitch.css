@@ -1,0 +1,11 @@
+.mode-switch {
+  display: flex;
+  justify-content: center;
+  margin-top: 4vw;
+}
+
+@media only screen and (orientation: landscape) {
+  .mode-switch {
+    display: none;
+  }
+}

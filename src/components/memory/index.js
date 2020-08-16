@@ -1,31 +1,40 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
-import StatusBar from "./StatusBar";
 import MemoryCard from "./MemoryCard";
+import StatusBar from "../StatusBar";
+import ResultModal from "../ResultModal";
+import * as utils from "../../utils";
 
-const colors = [
+const images = [
   "pink",
-  "red",
-  "orange",
-  "yellow",
   "green",
+  "orange",
   "teal",
   "blue",
   "purple",
+  "red",
+  "yellow",
 ];
 
 function generateCards() {
   const cards = [];
-
-  for (let i = 0; i < colors.length; i++) {
-    cards.push({ key: i * 2, isFlipped: false, color: colors[i] });
-    cards.push({ key: i * 2 + 1, isFlipped: false, color: colors[i] });
+  for (let i = 0; i < images.length; i++) {
+    cards.push({
+      key: i * 2,
+      isFlipped: false,
+      color: images[i],
+      isLocked: false,
+    });
+    cards.push({
+      key: i * 2 + 1,
+      isFlipped: false,
+      color: images[i],
+      isLocked: false,
+    });
   }
-
   return cards.sort(() => Math.random() - 0.5);
 }
 
-//mappa cardsTOFLip till deras id
 function flipCards(cards, keysToFlip) {
   return cards.map((card) => {
     if (keysToFlip.includes(card.key)) {
@@ -38,101 +47,156 @@ function flipCards(cards, keysToFlip) {
   });
 }
 
+function lockCards(cards, keysToLock) {
+  return cards.map((card) => {
+    if (keysToLock.includes(card.key)) {
+      return {
+        ...card,
+        isLocked: true,
+      };
+    }
+    return card;
+  });
+}
+
+function prettifyTime(timeMs) {
+  const totalSeconds = Math.floor(timeMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds - minutes * 60;
+  return minutes ? `${minutes}m ${seconds}s` : `${seconds}s`;
+}
+
 function Memory() {
   const [game, setGame] = useState({ cards: generateCards() });
   const [wrongPair, setWrongPair] = useState([]);
 
-  const timeOutIds = useRef([]);
+  const [win, setWin] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const timeoutIds = useRef([]);
 
   const [startTime, setStartTime] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
 
+  const [scoreIsSaved, setScoreIsSaved] = useState(false);
+
   useEffect(() => {
-    if (startTime === 0) return;
-    const intervalId = setInterval(
-      () => setElapsedTime(Date.now() - startTime),
-      1000
-    );
+    if (startTime === 0 || win) return;
+    const intervalId = setInterval(() => {
+      setElapsedTime(Date.now() - startTime);
+    }, 1000);
     return () => clearInterval(intervalId);
-  }, [startTime]);
+  }, [startTime, win]);
 
   useEffect(() => {
     if (wrongPair.length === 0) return;
-    const timeOutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setGame((oldGame) => {
         const newCards = flipCards(
           oldGame.cards,
           wrongPair.map((card) => card.key)
         );
         return {
+          ...oldGame,
           cards: newCards,
-          firstCard: oldGame.firstCard,
         };
       });
     }, 1000);
-    timeOutIds.current = timeOutIds.current.concat(timeOutId);
+    timeoutIds.current = timeoutIds.current.concat(timeoutId);
   }, [wrongPair]);
 
   useEffect(() => {
     return () => {
-      console.log("timeouts", timeOutIds);
-      timeOutIds.current.forEach((id) => clearTimeout(id));
+      timeoutIds.current.forEach((id) => clearTimeout(id));
     };
   }, []);
 
   function onRestart() {
-    timeOutIds.current.forEach((id) => clearTimeout(id));
-    timeOutIds.current = [];
+    timeoutIds.current.forEach((id) => clearTimeout(id));
+    timeoutIds.current = [];
     setGame({ cards: generateCards() });
     setStartTime(0);
     setElapsedTime(0);
+    setWin(false);
+    setScoreIsSaved(false);
   }
 
   function onCardClick(card) {
-    if (card.isFlipped) {
-      return;
-    }
     // If the card is already flipped there is nothing we need to do.
+    if (card.isFlipped) return;
 
     setGame(({ cards, firstCard }) => {
-      const newCards = flipCards(cards, [card.key]);
       // The { cards, firstCard, secondCard } above is the decomposed game object.
       // These three variables represent the previous state, before a card was clicked.
       // We should return the new state, depending on the previous one and on the card that was clicked.
-      // There are 4 different cases.
-      // 1. The clicked card is the first card (meaning that both firstCard and secondCard from the previous state are undefined)
+      let newCards = flipCards(cards, [card.key]);
+
       if (!firstCard) {
         return {
-          cards: newCards, //behöver flippa kortet som är klickat på!
+          cards: newCards,
           firstCard: card,
         };
       } else {
         if (firstCard.color !== card.color) {
           setWrongPair([firstCard, card]);
+        } else {
+          newCards = lockCards(newCards, [firstCard.key, card.key]);
+          if (newCards.every((card) => card.isLocked)) {
+            setWin(true);
+            setShowModal(true);
+            setElapsedTime(Date.now() - startTime);
+          }
         }
         return {
           cards: newCards,
         };
       }
     });
-    setStartTime((oldStartTime) =>
-      oldStartTime === 0 ? Date.now() : oldStartTime
-    );
+
+    setStartTime((oldStartTime) => {
+      if (oldStartTime === 0) {
+        return Date.now();
+      }
+      return oldStartTime;
+    });
+  }
+
+  function fetchLeaderboard() {
+    return utils.fetchLeaderboard("memory").then((lb) => {
+      return lb.map(
+        (entry, i) => `${i + 1}. ${entry.name}: ${prettifyTime(entry.timeMs)}`
+      );
+    });
+  }
+
+  function saveScore(name) {
+    if (name) {
+      utils
+        .saveScore("memory", { name: name, timeMs: elapsedTime })
+        .then(() => setScoreIsSaved(true));
+    }
   }
 
   return (
-    <div>
-      <div className="game-container">
-        <StatusBar
-          status={"Time: " + elapsedTime + " ms"}
-          onRestart={onRestart}
-        ></StatusBar>
-        <div className="memory-grid">
-          {game.cards.map((card) => (
-            <MemoryCard {...card} onClick={() => onCardClick(card)} />
-          ))}
-        </div>
+    <div className="game-container">
+      <StatusBar
+        status={"Time: " + prettifyTime(elapsedTime)}
+        onRestart={onRestart}
+        setShowModal={setShowModal}
+      ></StatusBar>
+      <div className="memory-grid">
+        {game.cards.map((card) => (
+          <MemoryCard {...card} onClick={() => onCardClick(card)}></MemoryCard>
+        ))}
       </div>
+      <ResultModal
+        show={showModal}
+        header={win ? "Congratulations, you won!" : "Leaderboard"}
+        body={win ? "Your time was " + prettifyTime(elapsedTime) + "." : ""}
+        handleClose={() => setShowModal(false)}
+        fetchLeaderboard={fetchLeaderboard}
+        saveScore={win && !scoreIsSaved ? saveScore : undefined}
+      ></ResultModal>
     </div>
   );
 }
