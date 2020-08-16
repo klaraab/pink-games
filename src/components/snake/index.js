@@ -4,6 +4,7 @@ import TouchController from "./TouchController";
 
 const width = 20;
 const height = 12;
+const initialIntervalMs = 400;
 
 function generateGame() {
   const snake = {
@@ -18,6 +19,7 @@ function generateGame() {
     snake,
     food: generateFood(snake),
     isOver: false,
+    commands: [],
   };
 }
 
@@ -56,7 +58,13 @@ function isWrongMove(game) {
   );
 }
 
+function isOpposite(dir1, dir2) {
+  return Math.abs(dir1.x - dir2.x) === 2 || Math.abs(dir1.y - dir2.y) === 2;
+}
+
 function tick(game) {
+  const { commands, snake, food } = game;
+
   const moves = {
     up: { x: 0, y: -1 },
     down: { x: 0, y: 1 },
@@ -64,25 +72,43 @@ function tick(game) {
     right: { x: 1, y: 0 },
   };
 
-  const move = moves[game.snake.dir];
+  let move = moves[snake.dir];
+
+  let newCommands = [...commands];
+
+  while (
+    newCommands.length > 0 &&
+    (isOpposite(moves[newCommands[0]], move) || newCommands[0] === snake.dir)
+  ) {
+    newCommands = newCommands.slice(1);
+  }
+
+  let newDir = snake.dir;
+  if (newCommands.length > 0) {
+    newDir = newCommands[0];
+    newCommands = newCommands.slice(1);
+  }
+
+  move = moves[newDir];
 
   const newHead = {
-    x: game.snake.head.x + move.x,
-    y: game.snake.head.y + move.y,
+    x: snake.head.x + move.x,
+    y: snake.head.y + move.y,
   };
 
-  const newTail = [game.snake.head, ...game.snake.tail];
+  const newTail = [snake.head, ...snake.tail];
 
   const newSnake = {
-    ...game.snake,
+    ...snake,
     head: newHead,
     tail: newTail,
+    dir: newDir,
   };
 
   let newGame;
   let newFood;
 
-  if (isEqual(newHead, game.food)) {
+  if (isEqual(newHead, food)) {
     newFood = generateFood(newSnake);
 
     newGame = {
@@ -109,26 +135,32 @@ function tick(game) {
   return {
     ...newGame,
     isOver: false,
+    commands: newCommands,
   };
+}
+
+function getIntervalMs(game) {
+  const food = game.snake.tail.length - 1;
+  return initialIntervalMs * Math.pow(0.95, Math.floor(food / 3));
 }
 
 function Snake() {
   const [game, setGame] = useState(generateGame());
   const [gameOver, setGameOver] = useState(false);
+  const [intervalMs, setIntervalMs] = useState(initialIntervalMs);
 
   useEffect(() => {
     if (gameOver) return;
     const intervalId = setInterval(() => {
       setGame((oldGame) => {
         const newGame = tick(oldGame);
-        if (newGame.isOver) {
-          setGameOver(true);
-        }
+        if (newGame.isOver) setGameOver(true);
+        setIntervalMs(getIntervalMs(newGame));
         return newGame;
       });
-    }, 400);
+    }, intervalMs);
     return () => clearInterval(intervalId);
-  }, [gameOver]);
+  }, [gameOver, intervalMs]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);
@@ -156,15 +188,22 @@ function Snake() {
         break;
     }
 
-    setGame((oldGame) => {
-      return {
-        ...oldGame,
-        snake: {
-          ...oldGame.snake,
-          dir: newDir,
-        },
-      };
-    });
+    addCommand(newDir);
+  }
+
+  function addCommand(dir) {
+    if (dir) {
+      setGame((oldGame) => {
+        return {
+          ...oldGame,
+          commands: [...oldGame.commands, dir],
+        };
+      });
+    }
+  }
+
+  function onChangeDir(dir) {
+    addCommand(dir);
   }
 
   const cells = [];
@@ -186,7 +225,7 @@ function Snake() {
   return (
     <div className="game-container">
       <div className="snake-grid">{cells}</div>
-      <TouchController></TouchController>
+      <TouchController onChangeDir={onChangeDir}></TouchController>
     </div>
   );
 }
