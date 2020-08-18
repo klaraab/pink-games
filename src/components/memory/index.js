@@ -5,16 +5,7 @@ import StatusBar from "../StatusBar";
 import ResultModal from "../ResultModal";
 import * as utils from "../../utils";
 
-const images = [
-  "pink",
-  "green",
-  "orange",
-  "teal",
-  "blue",
-  "purple",
-  "red",
-  "yellow",
-];
+const images = ["rm1", "rm2", "rm3", "rm4", "rm5", "rm6", "rm7", "rm8"];
 
 function generateCards() {
   const cards = [];
@@ -22,13 +13,14 @@ function generateCards() {
     cards.push({
       key: i * 2,
       isFlipped: false,
-      color: images[i],
+      image: images[i],
       isLocked: false,
     });
+
     cards.push({
       key: i * 2 + 1,
       isFlipped: false,
-      color: images[i],
+      image: images[i],
       isLocked: false,
     });
   }
@@ -57,13 +49,6 @@ function lockCards(cards, keysToLock) {
     }
     return card;
   });
-}
-
-function prettifyTime(timeMs) {
-  const totalSeconds = Math.floor(timeMs / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds - minutes * 60;
-  return minutes ? `${minutes}m ${seconds}s` : `${seconds}s`;
 }
 
 function Memory() {
@@ -137,7 +122,7 @@ function Memory() {
           firstCard: card,
         };
       } else {
-        if (firstCard.color !== card.color) {
+        if (firstCard.image !== card.image) {
           setWrongPair([firstCard, card]);
         } else {
           newCards = lockCards(newCards, [firstCard.key, card.key]);
@@ -162,9 +147,10 @@ function Memory() {
   }
 
   function fetchLeaderboard() {
-    return utils.fetchLeaderboard("memory").then((lb) => {
+    return utils.fetchLeaderboard("memory", [["timeMs", "asc"]]).then((lb) => {
       return lb.map(
-        (entry, i) => `${i + 1}. ${entry.name}: ${prettifyTime(entry.timeMs)}`
+        (entry, i) =>
+          `${i + 1}. ${entry.name}: ${utils.prettifyTime(entry.timeMs)}`
       );
     });
   }
@@ -180,7 +166,7 @@ function Memory() {
   return (
     <div className="game-container">
       <StatusBar
-        status={"Time: " + prettifyTime(elapsedTime)}
+        status={"Time: " + utils.prettifyTime(elapsedTime)}
         onRestart={onRestart}
         setShowModal={setShowModal}
       ></StatusBar>
@@ -192,7 +178,9 @@ function Memory() {
       <ResultModal
         show={showModal}
         header={win ? "Congratulations, you won!" : "Leaderboard"}
-        body={win ? "Your time was " + prettifyTime(elapsedTime) + "." : ""}
+        body={
+          win ? "Your time was " + utils.prettifyTime(elapsedTime) + "." : ""
+        }
         handleClose={() => setShowModal(false)}
         fetchLeaderboard={fetchLeaderboard}
         saveScore={win && !scoreIsSaved ? saveScore : undefined}

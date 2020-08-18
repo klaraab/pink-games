@@ -1,10 +1,13 @@
 import React from "react";
 import "./MemoryCard.css";
 
-function MemoryCard({ isFlipped, color, onClick }) {
+function MemoryCard({ isFlipped, image, onClick }) {
   return (
     <div
-      className={"memory-card" + (isFlipped ? " " + color : "")}
+      className={
+        "memory-card" +
+        (isFlipped ? " " + (image + " " + "image") : " card-back")
+      }
       onClick={onClick}
     ></div>
   );

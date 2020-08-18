@@ -5,27 +5,57 @@
   border-radius: 5px;
   background-color: white;
 }
-.pink {
-  background-color: #ff43d0;
+
+.image {
+  background-size: cover;
 }
-.red {
-  background-color: #ff0900;
+
+.rm1 {
+  background-image: url("../../../images/rick-and-morty-pics/178466.jpg");
 }
-.orange {
-  background-color: #ff7f00;
+
+.rm2 {
+  background-image: url("../../../images/rick-and-morty-pics/1_j55XGyX4ZGimd0mjGeYXQQ.jpg");
 }
-.yellow {
-  background-color: #ffef00;
+
+.rm3 {
+  background-image: url("../../../images/rick-and-morty-pics/image-asset.jpg");
 }
-.teal {
-  background-color: #63d3df;
+
+.rm4 {
+  background-image: url("../../../images/rick-and-morty-pics/Krombopulos_Michael.jpg");
 }
-.green {
-  background-color: #00f11d;
+
+.rm5 {
+  background-image: url("../../../images/rick-and-morty-pics/rick-and-morty-summer-adult-swim-850x545.jpg");
 }
-.blue {
-  background-color: #0079ff;
+
+.rm6 {
+  background-image: url("../../../images/rick-and-morty-pics/rick-morty-hardees-CONTENT-2017.jpg");
 }
-.purple {
-  background-color: #a800ff;
+
+.rm7 {
+  background-image: url("../../../images/rick-and-morty-pics/rick.jpg");
+}
+
+.rm8 {
+  background-image: url("../../../images/rick-and-morty-pics/scaryterry.jpg");
+}
+
+.card-back {
+  background-color: black;
+  background-image: radial-gradient(
+      white,
+      rgba(255, 255, 255, 0.2) 2px,
+      transparent 40px
+    ),
+    radial-gradient(white, rgba(255, 255, 255, 0.15) 1px, transparent 30px),
+    radial-gradient(white, rgba(255, 255, 255, 0.1) 2px, transparent 40px),
+    radial-gradient(
+      rgba(255, 255, 255, 0.4),
+      rgba(255, 255, 255, 0.1) 2px,
+      transparent 30px
+    );
+  background-size: cover;
+  background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
 }

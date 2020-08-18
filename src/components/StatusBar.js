@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import "./StatusBar.css";
 import Button from "react-bootstrap/Button";
 
-function StatusBar({ status, onRestart, setShowModal }) {
+function StatusBar({ status, onRestart, setShowModal, score }) {
   return (
     <div className="status-bar">
-      <p className="status">{status}</p>
+      <div className="status">
+        <p>{status}</p>
+        <p className="score">{score}</p>
+      </div>
       <Button
         variant="light"
         className="button"
